@@ -11,13 +11,7 @@ conda env create -f environment.yml
 conda activate unet3
 pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 ```
-
-
 ## Running the code
-
-
-### Training
-
 
 ### Testing
 
@@ -40,5 +34,3 @@ python test.py
 This will use the downloded trained model and provided sample test data to test the network. Sample test data includes the
 network input as artefactual sparse recostruction images, "test_32.mat", and ground truth artefact-free full reconstruction, "test_GT.mat", to be compared with network 
 output for performance evaluation.
-
-## Some results from our paper
