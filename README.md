@@ -4,11 +4,14 @@ This repository contains the code of sparse reconstruction artefact removal with
 
 ## Requirements
 
-See environment.yml for the conda requirements to run the test code. In order to install the required version of lasagne run the following:
+The requirements for "test.py" can be easily satisfied by installing conda ([conda.io](conda.io)), and creating a new environment which satisfies the requirements listed in "environment.yml".
 
 ```
+conda env create -f environment.yml
+conda activate unet3
 pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 ```
+
 
 ## Running the code
 
@@ -27,6 +30,7 @@ The requirements for "test.py" can be easily satisfied by installing conda ([con
 ```
 conda env create -f environment.yml
 conda activate unet3
+pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 ```
 
 Then by running "test.py".
