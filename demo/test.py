@@ -188,7 +188,7 @@ predicted = []
 idc_test = range(wo_artifact.shape[0])
 
 
-for b in xrange(0, len(idc_test), batchsize): 
+for b in range(0, len(idc_test), batchsize): 
 
     idcMB_test = idc_test[b : b+batchsize]
 
@@ -207,6 +207,6 @@ sio.savemat(saving_path + '/GT.mat', {"GT" : GT})
 sio.savemat(saving_path + '/predicted.mat', {"predicted" : predicted})
         
 
-print "total testing took {:g} seconds".format(time.time() - start_testing_t)
+print ("total testing took {:g} seconds".format(time.time() - start_testing_t))
 
 
