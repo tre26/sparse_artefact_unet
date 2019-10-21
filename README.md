@@ -4,10 +4,10 @@ This repository contains the code of sparse reconstruction artefact removal with
 
 ## Requirements
 
-The requirements for "test.py" can be easily satisfied by installing conda ([conda.io](conda.io)), and creating a new environment which satisfies the requirements listed in "environment.yml".
+The requirements for "test.py" can be easily satisfied by installing conda ([conda.io](conda.io)), and creating a new environment which satisfies the requirements listed in "environment_***.yml". You may need other requirements e.g. gcc etc. It should be possible to find these by running conda install ___.
 
 ```
-conda env create -f environment.yml
+conda env create -f environment_***.yml
 conda activate unet3
 pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 ```
