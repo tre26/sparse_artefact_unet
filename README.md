@@ -34,3 +34,7 @@ python test.py
 This will use the downloded trained model and provided sample test data to test the network. Sample test data includes the
 network input as artefactual sparse recostruction images, "test_32.mat", and ground truth artefact-free full reconstruction, "test_GT.mat", to be compared with network 
 output for performance evaluation.
+
+### Running model.py
+
+It's not clear from the original version of this code what "model.py" is supposed to do. The original code won't run at all, so I've fixed it so that it is at least valid python code. 
