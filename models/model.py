@@ -1,4 +1,3 @@
-
 import sys
 import glob
 import re
@@ -10,18 +9,46 @@ from lasagne import layers
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
-import sklearn
 import h5py 
 import matplotlib.pyplot as plt
 import scipy.io as sio
-from skimage.measure import compare_ssim as ssim 
 
-def unet(pretrained_weights = None,input_size = (batchsize, 1, 256, 256), learning_rate):
+class Unpool2DLayer(layers.Layer):
+
+    def __init__(self, incoming, ds, **kwargs):
+
+        super(Unpool2DLayer, self).__init__(incoming, **kwargs)
+
+        if (isinstance(ds, int)):
+            ds = (ds, ds)
+        else:
+            ds = tuple(ds)
+            if len(ds) != 2:
+                raise ValueError('ds must be an int or pair of int')
+        self.ds = ds
+
+    def get_output_shape_for(self, input_shape):
+        output_shape = list(input_shape)
+
+        output_shape[2] = input_shape[2] * self.ds[0]
+        output_shape[3] = input_shape[3] * self.ds[1]
+
+        return tuple(output_shape)
+
+    def get_output_for(self, input, **kwargs):
+        ds = self.ds
+        input_shape = input.shape
+        output_shape = self.get_output_shape_for(input_shape)
+        return input.repeat(ds[0], axis=2).repeat(ds[1], axis=3)
+
+batchsize = 1
+
+def unet(learning_rate, pretrained_weights = None,input_size = (batchsize, 1, 256, 256)):
 
     tX = T.tensor4('inputs') 
     tY = T.tensor3('targets') 
 
-    inputLayer = layers.InputLayer(shape=(batchsize, 1, 256, 256), input_var=tX) 
+    inputLayer = layers.InputLayer(shape=input_size, input_var=tX) 
 
     conv1 = layers.Conv2DLayer(inputLayer, num_filters= 32, filter_size=(3,3), stride=1, pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
 
@@ -80,9 +107,9 @@ def unet(pretrained_weights = None,input_size = (batchsize, 1, 256, 256), learni
     network = layers.Conv2DLayer(conv9, num_filters= 1, filter_size=(1,1), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(), b=lasagne.init.Constant(0.), nonlinearity=None, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
 
     #print "output shape:", network.output_shape
-    loss = lasagne.objectives.squared_error(tYhat, tY).mean()
     tYhat = layers.get_output(network)
     tYhat_test = layers.get_output(network, deterministic=True)
+    loss = lasagne.objectives.squared_error(tYhat, tY).mean()
     params = layers.get_all_params(network, trainable=True)
     updates = lasagne.updates.adam(loss, params, learning_rate=learning_rate)
     train_model = theano.function([tX, tY], [tYhat, loss], updates=updates, on_unused_input='ignore')
@@ -94,6 +121,6 @@ def unet(pretrained_weights = None,input_size = (batchsize, 1, 256, 256), learni
     '''
     
     print ('Number of network parameters: {:d}'.format(layers.count_params(network)))
-    print ('Network architecture: '.format(lasagne2str(network)))
+    print ('Network architecture: '.format(network))
     
     return train_model
