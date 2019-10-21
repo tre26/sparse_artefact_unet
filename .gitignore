@@ -13,3 +13,4 @@ ipython_config.py
 
 # pyenv
 .python-version
+.DS_Store
