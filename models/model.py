@@ -93,7 +93,7 @@ def unet(pretrained_weights = None,input_size = (batchsize, 1, 256, 256), learni
         network.load_weights(pretrained_weights)
     '''
     
-    print 'Number of network parameters: {:d}'.format(lasagne.layers.count_params(network))
-    print 'Network architecture: '.format(lasagne2str(network))
+    print ('Number of network parameters: {:d}'.format(lasagne.layers.count_params(network)))
+    print ('Network architecture: '.format(lasagne2str(network)))
     
     return train_model
