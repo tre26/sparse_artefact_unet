@@ -7,14 +7,56 @@ import time
 import numpy as np
 import lasagne
 from lasagne import layers
+from lasagne.nonlinearities import rectify
+from lasagne.init import GlorotUniform,Constant
 import theano
 import theano.tensor as T
+from theano.tensor.nnet import conv2d
 floatX = theano.config.floatX
 import random
 import h5py 	
 import matplotlib.pyplot as plt
 import scipy.io as sio
 
+def gen_cnn(input_var = None):
+    inputLayer = layers.InputLayer(shape=(None, 1, 512, 512), input_var=input_var) 
+    conv1 = layers.Conv2DLayer(inputLayer, num_filters= 64, filter_size=(3,3), stride=1, pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv1 = layers.Conv2DLayer(conv1, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    pool1 = layers.Pool2DLayer(conv1, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
+    conv2 = layers.Conv2DLayer(pool1, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv2 = layers.Conv2DLayer(conv2, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    pool2 = layers.Pool2DLayer(conv2, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
+    conv3 = layers.Conv2DLayer(pool2, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv3 = layers.Conv2DLayer(conv3, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    pool3 = layers.Pool2DLayer(conv3, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
+    conv4 = layers.Conv2DLayer(pool3, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv4 = layers.Conv2DLayer(conv4, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    pool4 = layers.Pool2DLayer(conv4, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
+    conv5 = layers.Conv2DLayer(pool4, num_filters= 1024, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv5 = layers.Conv2DLayer(conv5, num_filters= 1024, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    up6 = Unpool2DLayer(conv5, (2,2))
+    conv6 = layers.Conv2DLayer(up6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    merge6 = layers.ConcatLayer([conv6, conv4], axis = 1)
+    conv6 = layers.Conv2DLayer(merge6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv6 = layers.Conv2DLayer(conv6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    up7 = Unpool2DLayer(conv6, (2,2))
+    conv7 = layers.Conv2DLayer(up7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    merge7 = layers.ConcatLayer([conv7, conv3], axis = 1)
+    conv7 = layers.Conv2DLayer(merge7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv7 = layers.Conv2DLayer(conv7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    up8 = Unpool2DLayer(conv7, (2,2))
+    conv8 = layers.Conv2DLayer(up8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    merge8 = layers.ConcatLayer([conv8, conv2], axis = 1)
+    conv8 = layers.Conv2DLayer(merge8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    conv8 = layers.Conv2DLayer(conv8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    up9 = Unpool2DLayer(conv8, (2,2))
+    conv9 = layers.Conv2DLayer(up9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    merge9 = layers.ConcatLayer([conv9, conv1], axis = 1)
+    conv9 = layers.Conv2DLayer(merge9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    vis25 = layers.get_output(conv9)
+    conv9 = layers.Conv2DLayer(conv9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(gain='relu'), b=Constant(0.), nonlinearity=rectify, flip_filters=True, convolution=conv2d)
+    network = layers.Conv2DLayer(conv9, num_filters= 1, filter_size=(1,1), stride=(1, 1), pad='same', untie_biases=False, W=GlorotUniform(), b=Constant(0.), nonlinearity=None, flip_filters=True, convolution=conv2d)
+    return network
 
 class Unpool2DLayer(layers.Layer):
 
@@ -45,93 +87,19 @@ class Unpool2DLayer(layers.Layer):
         return input.repeat(ds[0], axis=2).repeat(ds[1], axis=3)
 
 
-batchsize = 1
-
-
 tX = T.tensor4('inputs') 
 tY = T.tensor3('targets') 
 
-inputLayer = lasagne.layers.InputLayer(shape=(None, 1, 512, 512), input_var=tX) 
+network = gen_cnn(tX)
 
-conv1 = lasagne.layers.Conv2DLayer(inputLayer, num_filters= 64, filter_size=(3,3), stride=1, pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
+tYhat = layers.get_output(network)
+tYhat_test = layers.get_output(network, deterministic=True)
 
-conv1 = lasagne.layers.Conv2DLayer(conv1, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
+params = layers.get_all_params(network, trainable=True)
 
-pool1 = lasagne.layers.Pool2DLayer(conv1, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
+# demo code:
 
-conv2 = lasagne.layers.Conv2DLayer(pool1, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv2 = lasagne.layers.Conv2DLayer(conv2, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-pool2 = lasagne.layers.Pool2DLayer(conv2, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
-
-conv3 = lasagne.layers.Conv2DLayer(pool2, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv3 = lasagne.layers.Conv2DLayer(conv3, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-pool3 = lasagne.layers.Pool2DLayer(conv3, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
-
-conv4 = lasagne.layers.Conv2DLayer(pool3, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv4 = lasagne.layers.Conv2DLayer(conv4, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-pool4 = lasagne.layers.Pool2DLayer(conv4, pool_size = (2,2), stride=None, pad=(0, 0), ignore_border=True, mode='average_inc_pad')
-
-conv5 = lasagne.layers.Conv2DLayer(pool4, num_filters= 1024, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv5 = lasagne.layers.Conv2DLayer(conv5, num_filters= 1024, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-up6 = Unpool2DLayer(conv5, (2,2))
-
-conv6 = lasagne.layers.Conv2DLayer(up6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-merge6 = lasagne.layers.ConcatLayer([conv6, conv4], axis = 1)
-
-conv6 = lasagne.layers.Conv2DLayer(merge6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv6 = lasagne.layers.Conv2DLayer(conv6, num_filters= 512, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-up7 = Unpool2DLayer(conv6, (2,2))
-
-conv7 = lasagne.layers.Conv2DLayer(up7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-merge7 = lasagne.layers.ConcatLayer([conv7, conv3], axis = 1)
-
-conv7 = lasagne.layers.Conv2DLayer(merge7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv7 = lasagne.layers.Conv2DLayer(conv7, num_filters= 256, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-up8 = Unpool2DLayer(conv7, (2,2))
-
-conv8 = lasagne.layers.Conv2DLayer(up8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-merge8 = lasagne.layers.ConcatLayer([conv8, conv2], axis = 1)
-
-conv8 = lasagne.layers.Conv2DLayer(merge8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-conv8 = lasagne.layers.Conv2DLayer(conv8, num_filters= 128, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-up9 = Unpool2DLayer(conv8, (2,2))
-
-conv9 = lasagne.layers.Conv2DLayer(up9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-merge9 = lasagne.layers.ConcatLayer([conv9, conv1], axis = 1)
-
-conv9 = lasagne.layers.Conv2DLayer(merge9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-vis25 = lasagne.layers.get_output(conv9)
-
-conv9 = lasagne.layers.Conv2DLayer(conv9, num_filters= 64, filter_size=(3,3), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(gain='relu'), b=lasagne.init.Constant(0.), nonlinearity=lasagne.nonlinearities.rectify, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-network = lasagne.layers.Conv2DLayer(conv9, num_filters= 1, filter_size=(1,1), stride=(1, 1), pad='same', untie_biases=False, W=lasagne.init.GlorotUniform(), b=lasagne.init.Constant(0.), nonlinearity=None, flip_filters=True, convolution=theano.tensor.nnet.conv2d)
-
-
-tYhat = lasagne.layers.get_output(network)
-tYhat_test = lasagne.layers.get_output(network, deterministic=True)
-
-params = lasagne.layers.get_all_params(network, trainable=True)
-
-
+batchsize = 1
 
 w_artifact_file = h5py.File('./test_32.mat','r') 
 variables_w = w_artifact_file.items()
@@ -162,20 +130,11 @@ saving_path = './result/'
 loss = lasagne.objectives.squared_error(tYhat, tY).mean()
 test_fn = theano.function([tX, tY], [tYhat_test, loss], on_unused_input='ignore') 
 
-
 #load saved model
-'''
-model_file_first = glob.glob('./model_*')
-if  model_file_first != []:
-    
-    print "loading from saved model..."    
-    with np.load(model_file_first[0]) as n:
-        param_values = [n['arr_%d' % j] for j in range(len(n.files))]
-    lasagne.layers.set_all_param_values(network, param_values)
-'''
+
 with np.load('./model/16843907') as n:
     param_values = [n['arr_%d' % j] for j in range(len(n.files))]
-lasagne.layers.set_all_param_values(network, param_values)
+layers.set_all_param_values(network, param_values)
 
 
 # test phase        
